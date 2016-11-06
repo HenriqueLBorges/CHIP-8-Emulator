@@ -34,7 +34,6 @@ private:
 	unsigned short posicao_atual; //Guarda a posição atual no vetor de posições
 
 	unsigned char memoria[4096]; //Memória total = 4K
-	unsigned char graficos[64 * 32]; //O Chip-8 tem um display de 64x32 pixels
 
 	unsigned char timer_delay;
 	unsigned char timer_som; //ativa o som quando o timer é diferente de 0

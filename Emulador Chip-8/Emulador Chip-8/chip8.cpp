@@ -119,7 +119,7 @@ void chip8::resetar()
 	timer_som = 0;
 	flag_Tela = true; //Limpa a tela
 
-	// Load fontset
+	// Carrega o fontset
 	for (int i = 0; i < 80; ++i)
 		memoria[i] = chip8_fontset[i];
 }
@@ -131,31 +131,37 @@ chip8::chip8()
 void chip8::emula_Ciclo()
 {
 	//Copia o código op da memória
-	codigo_op = memoria[PC] << 8 || memoria[PC + 1]; //adiciona 8 zeros e usa a operação lógica OR para juntar a instrução que está dividida em memoria[PC] e memoria [PC+1]
-
+	printf("Executando %04X em [%04X], I:%02X POSICAO_ATUAL =:%02X\n", codigo_op, memoria[PC], i, posicao_atual);
+	codigo_op = memoria[PC] << 8 | memoria[PC + 1]; //adiciona 8 zeros e usa a operação lógica OR para juntar a instrução que está dividida em memoria[PC] e memoria [PC+1]
 	//Switch que verifica as operações
 	switch (codigo_op & 0xF000) { //Utiliza a operação lógica AND para fazer uma máscara de bits que irá verificar apenas os 4 bits da esquerda para direita (os bits que contem a operação)
 								  //Casos os 4 primeiros bits da esquerda para a direita derem 0 sabemos que existem duas instruções possíveis
-	case 0x0000:
+		printf("Entrou no primeiro Switch\n");
 		switch (codigo_op & 0x000F)//máscara de bits para verificar os 4 últimos e determinar a instrução
 		{
-		case 0x0000: // 0x00E0: Limpa a tela
-			for (int i = 0; i < 2048; ++i)
-				graficos[i] = 0x0;
-			al_clear_to_color(al_map_rgb(255, 255, 255));
-			flag_Tela = true;
-			PC += 2;
+			printf("Entrou no segundo Switch\n");
+			
+			case 0x1:
+				printf("Entrou\n");
+				flag_Tela = true;
+				PC += 2;
 			break;
 
-		case 0x000E: // 0x00EE: Retorna da subrotina
-			posicao_atual = posicao_atual -1;			// 16 levels of stack, decrease stack pointer to prevent overwrite
-			PC = posicao[posicao_atual];	// Put the stored return address from the stack back into the program counter					
-			PC = PC + 2;		// Don't forget to increase the program counter!
+			case 0x0000:
+				al_clear_to_color(al_map_rgb(255, 255, 255));
+				flag_Tela = true;
+				PC += 2;
 			break;
 
-		default:
-			printf("Código OP desconhecido[0x0000]: 0x%X\n", codigo_op);
-		}
+			case 0x000E: // 0x00EE: Retorna da subrotina
+				posicao_atual = posicao_atual -1;			// 16 levels of stack, decrease stack pointer to prevent overwrite
+				PC = posicao[posicao_atual];	// Put the stored return address from the stack back into the program counter					
+				PC = PC + 2;		// Don't forget to increase the program counter!
+			break;
+
+			default:
+				printf("Codigo OP desconhecido[0x0000]: 0x%X\n", codigo_op);
+			}
 
 	case 0x1000:// 0x1NNN: Pula para o endereço NNN
 		PC = codigo_op & 0x0FFF; //Máscara de bits para pegar o endereço
@@ -271,7 +277,7 @@ void chip8::emula_Ciclo()
 			PC = PC + 2; //Conta a instrução 0x8XYE
 
 		default:
-			printf("Código OP desconhecido [0x8000]: 0x%X\n", codigo_op);
+			printf("Codigo OP desconhecido [0x8000]: 0x%X\n", codigo_op);
 		}
 		break;
 
@@ -297,10 +303,6 @@ void chip8::emula_Ciclo()
 		break;
 
 	case 0xD000: // 0xDXYN: Desenha um sprite 8XN nas coordenadas (Registrado[X], Registrador[Y])
-				   // Each row of 8 pixels is read as bit-coded starting from memory location I;
-				   // I value doesn't change after the execution of this instruction.
-				   // VF is set to 1 if any screen pixels are flipped from set to unset when the sprite is drawn,
-				   // and to 0 if that doesn't happen
 	{
 		unsigned short x = registrador[(codigo_op & 0x0F00) >> 8];
 		unsigned short y = registrador[(codigo_op & 0x00F0) >> 4];
@@ -313,14 +315,6 @@ void chip8::emula_Ciclo()
 			pixel = memoria[i + linha_y];
 			for (int linha_x = 0; linha_x < 8; linha_x++)
 			{
-				if ((pixel & (0x80 >> linha_x)) != 0)
-				{
-					if (graficos[(x + linha_x + ((y + linha_y) * 64))] == 1)
-					{
-						registrador[0xF] = 1;
-					}
-					graficos[x + linha_x + ((y + linha_y) * 64)] ^= 1;
-				}
 				// Linha: x1, y1, x2, y2, cor, espessura
 				al_draw_line(0, 0, linha_x, linha_y, al_map_rgb(255, 0, 0), 1.0);
 			}
@@ -411,10 +405,10 @@ void chip8::emula_Ciclo()
 			break;
 
 		default:
-			printf("Código OP desconhecido [0x8000]: 0x%X\n", codigo_op);
+			printf("Codigo OP desconhecido [0x8000]: 0x%X\n", codigo_op);
 		}
 	default:
-		printf("Código OP desconhecido [0x8000]: 0x%X\n", codigo_op);
+		printf("Codigo OP desconhecido [0x8000]: 0x%X\n / NÃO ENTROU EM NENHUM\n", codigo_op);
 	}
 
 	// Atualiza os timers
@@ -455,7 +449,7 @@ bool chip8::carregarJogo(const char * filename)
 		return false;
 	}
 
-	// Copia a ROM parao buffer
+	// Copia a ROM para o buffer
 	size_t result = fread(buffer, 1, lSize, ROM);
 	if (result != lSize)
 	{
