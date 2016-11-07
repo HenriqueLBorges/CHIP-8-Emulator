@@ -29,6 +29,7 @@ private:
 	unsigned char registrador[16]; //15 registradores (V0...VE) de 8 bits do CHIP-8 - 16º = 'carry flag'
 	unsigned short i; //Index
 	unsigned short PC; // Program Counter do CHIP-8
+	unsigned char display[64 * 32];
 
 	unsigned short posicao[16]; //Em caso de jumps ou calls saberemos para onde voltar no programa
 	unsigned short posicao_atual; //Guarda a posição atual no vetor de posições

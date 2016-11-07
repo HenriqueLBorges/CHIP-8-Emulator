@@ -14,15 +14,15 @@ int main(int argc, char **argv)
 	}
 	bool encerrar = false;
 	while (!encerrar) {
-		//if (ALLEGRO_EVENT_DISPLAY_CLOSE)
-		//{
-			//encerrar = true;
-		//}
+		/*if (ALLEGRO_EVENT_DISPLAY_CLOSE == true)
+		{
+			encerrar = true;
+		}*/
 		chip_8.emula_Ciclo();
 
 		if (chip_8.flag_Tela)
 		{
-
+			al_flip_display();
 		}
 	}
 	return 0;
