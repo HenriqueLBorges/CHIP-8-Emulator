@@ -6,9 +6,6 @@ chip8 chip_8;
 
 int main(int argc, char **argv)
 {
-	ALLEGRO_EVENT evento;
-	al_wait_for_event(chip_8.fila_eventos, &evento);
-
 	if (!chip_8.inicializar()) {
 		return -1;
 	}
@@ -23,10 +20,10 @@ int main(int argc, char **argv)
 		{
 			al_flip_display();
 		}
-		if (evento.type == ALLEGRO_EVENT_DISPLAY_CLOSE)
+		/*if (chip_8.evento.type == ALLEGRO_EVENT_DISPLAY_CLOSE)
 		{
 			encerrar = true;
-		}
+		}*/
 	}
 	return 0;
 }

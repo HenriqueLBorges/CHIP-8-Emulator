@@ -40,7 +40,7 @@ bool chip8::inicializar()
 		return false;
 	}
 
-	janela = al_create_display(800, 600); //O Chip-8 tem um display de 64x32 pixels
+	janela = al_create_display(64, 32); //O Chip-8 tem um display de 64x32 pixels
 
 	if (!janela) //Testa a janela
 	{
@@ -342,7 +342,9 @@ void chip8::emula_Ciclo()
 						display[index] = display[index] ^ 1;
 
 						if (display[index] == 1)
+						{
 							void al_draw_pixel(float x, float y, ALLEGRO_COLOR white);
+						}
 						else {
 							void al_draw_pixel(float x, float y, ALLEGRO_COLOR black);
 						}
@@ -386,18 +388,23 @@ void chip8::emula_Ciclo()
 
 				case 0x000A: // 0xANNN: Quando uma tecla é pressionada a mesma é guardada no registrador [X]
 				{
-					bool tecla_pressionada = false;
+					al_wait_for_event(fila_eventos, &evento);
 
-					for (int i = 0; i < 16; i++)
+					if (evento.type == ALLEGRO_EVENT_KEY_DOWN)
 					{
-						if (tecla[i] != 0)
+						key_down();
+						for (int i = 0; i < 16; i++)
 						{
-							registrador[(codigo_op & 0x0F00) >> 8] = i;
-							tecla_pressionada = true;
+							if (tecla[i] != 0)
+							{
+								registrador[(codigo_op & 0x0F00) >> 8] = i;
+							}
 						}
-					}
-					if (!tecla_pressionada)
+					}	
+					else 
+					{
 						return;
+					}
 					PC = PC + 2;
 				}
 				break;
@@ -526,7 +533,7 @@ bool chip8::carregarJogo(const char * filename)
 	return true;
 }
 
-void chip8::ALLEGRO_EVENT_KEY_DOWN()
+void chip8::key_down()
 {
 	if (ALLEGRO_KEY_1)		tecla[0x1] = 1;
 	else if (ALLEGRO_KEY_2)	tecla[0x2] = 1;
@@ -547,11 +554,9 @@ void chip8::ALLEGRO_EVENT_KEY_DOWN()
 	else if (ALLEGRO_KEY_X)	tecla[0x0] = 1;
 	else if (ALLEGRO_KEY_C)	tecla[0xB] = 1;
 	else if (ALLEGRO_KEY_V)	tecla[0xF] = 1;
-
-	//printf("Press key %c\n", key);
 }
 
-void chip8::ALLEGRO_EVENT_KEY_UP()
+void chip8::key_up()
 {
 	if (ALLEGRO_KEY_1)		tecla[0x1] = 0;
 	else if (ALLEGRO_KEY_2)	tecla[0x2] = 0;
