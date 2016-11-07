@@ -17,8 +17,9 @@ public:
 	void resetar(); //Reseta o CHIP-8
 	bool flag_Tela; //Status atual do registrador [15] (Carry Flag)
 	bool inicializar(); //Testa as configurações antes de iniciar o emulador
-	ALLEGRO_FONT *fonte = NULL;
 	unsigned char tecla[16]; //As teclas do Chip-8 vão de 0 à F
+	ALLEGRO_FONT *fonte = NULL;
+	ALLEGRO_EVENT_QUEUE *fila_eventos = NULL;
 	
 
 private:

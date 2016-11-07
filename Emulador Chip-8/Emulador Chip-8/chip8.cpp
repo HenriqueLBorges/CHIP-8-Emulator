@@ -71,6 +71,15 @@ bool chip8::inicializar()
 		return false;
 	}
 
+	fila_eventos = al_create_event_queue();
+	if (!fila_eventos)
+	{
+		fprintf(stderr, "Falha ao criar fila de eventos.\n");
+		al_destroy_display(janela);
+		return false;
+	}
+	al_register_event_source(fila_eventos, al_get_keyboard_event_source()); //Prepara a fila de evenos para pegar qualquer evento relacionado ao teclado
+	al_register_event_source(fila_eventos, al_get_display_event_source(janela)); //Prepara a fila de evenos para pegar qualquer evento relacionado à janela
 	al_set_window_title(janela, "Emulador Chip-8"); //Coloca o título da janela
 	return true;
 }
@@ -134,22 +143,23 @@ chip8::chip8()
 void chip8::emula_Ciclo()
 {
 	//Copia o código op da memória
-	printf("Executando %04X em [%04X], I:%02X POSICAO_ATUAL =:%02X\n", codigo_op, memoria[PC], i, posicao_atual);
 	codigo_op = memoria[PC] << 8 | memoria[PC + 1]; //adiciona 8 zeros e usa a operação lógica OR para juntar a instrução que está dividida em memoria[PC] e memoria [PC+1]
+	printf("Executando OP 0x%04X da memoria em [%04X], I= %02X e PC =:%02X\n", codigo_op, memoria[PC], i, PC);
 	//Switch que verifica as operações
 	switch (codigo_op & 0xF000) { //Utiliza a operação lógica AND para fazer uma máscara de bits que irá verificar apenas os 4 bits da esquerda para direita (os bits que contem a operação)
 								  //Casos os 4 primeiros bits da esquerda para a direita derem 0 sabemos que existem duas instruções possíveis
-		printf("Entrou no primeiro Switch\n");
 		case 0x0000:
 			switch (codigo_op & 0x000F)//máscara de bits para verificar os 4 últimos e determinar a instrução
 			{
-				case 0x0000:
-					al_clear_to_color(al_map_rgb(255, 255, 255));
+				case 0x0000: //00E0: Limpa a tela
+					al_clear_to_color(al_map_rgb(0, 0, 0));
+					for (int i = 0; i < 2048; ++i)
+						display[i] = 0;
 					flag_Tela = true;
 					PC += 2;
 				break;
 
-				case 0x000E: // 0x00EE: Retorna da subrotina
+				case 0x000E: //0x00EE: Retorna da subrotina
 					posicao_atual = posicao_atual -1;			// 16 Niveis da pilha, o ponteiro da pilha é decrementado pra previnir erro
 					PC = posicao[posicao_atual];	// Coloca o endereço de retorno da pilha de volta no PC					
 					PC = PC + 2;		
@@ -157,6 +167,7 @@ void chip8::emula_Ciclo()
 
 				default:
 					printf("Codigo OP desconhecido[0x0000]: 0x%X\n", codigo_op);
+					printf("Entrou no Switch das OPs 00E0 e 0x00EE\n");
 			}
 		break;
 
@@ -277,6 +288,7 @@ void chip8::emula_Ciclo()
 
 				default:
 					printf("Codigo OP desconhecido [0x8000]: 0x%X\n", codigo_op);
+					printf("Entrou no Switch das OPs 0x8000\n");
 				}
 		break;
 	
@@ -359,78 +371,96 @@ void chip8::emula_Ciclo()
 				break;
 
 			default:
-				printf("Unknown opcode [0xE000]: 0x%X\n", codigo_op);
+				printf("Codigo OP desconhecido [0x8000]: 0x%X\n", codigo_op);
+				printf("Entrou no Switch das OPs 0xE000\n");
 			}
 		break;
 
 		case 0xF000:
-		switch (codigo_op & 0x00FF)
-		{
-			case 0x0007: // 0xFX07: Pega o valor do timer de delay e joga no Registrador[X]
-				registrador[(codigo_op & 0x0F00) >> 8] = timer_delay;
-				PC = PC + 2;
-			break;
+			switch (codigo_op & 0x00FF)
+			{
+				case 0x0007: // 0xFX07: Pega o valor do timer de delay e joga no Registrador[X]
+					registrador[(codigo_op & 0x0F00) >> 8] = timer_delay;
+					PC = PC + 2;
+				break;
 
-			case 0x000A: // 0xFX0A: Pega o valor do timer de delay e joga no Registrador[X]
-				//registrador[(codigo_op & 0x0F00) >> 8] = teclas;
-				PC = PC + 2;
-			break;
-
-			case 0x0015: // 0xFX15: Pega o valor do Registrador[X] e joga no timer de delay
-				timer_delay = registrador[(codigo_op & 0x0F00) >> 8];
-				PC = PC + 2;
-			break;
-
-			case 0x0017: // 0xFX18: Pega o valor do Registrador[X] e joga no timer de som
-				timer_som = registrador[(codigo_op & 0x0F00) >> 8];
-				PC = PC + 2;
-			break;
-
-			case 0x001E: // 0xFX18: Soma o Registrador[X] + I e joga o resultado em I
-				if (i + registrador[(codigo_op & 0x0F00) >> 8] > 0xFFF)	
-					registrador[0xF] = 1;
-				else
+				case 0x000A: // 0xANNN: Quando uma tecla é pressionada a mesma é guardada no registrador [X]
 				{
-					registrador[0xF] = 0;
+					bool tecla_pressionada = false;
+
+					for (int i = 0; i < 16; i++)
+					{
+						if (tecla[i] != 0)
+						{
+							registrador[(codigo_op & 0x0F00) >> 8] = i;
+							tecla_pressionada = true;
+						}
+					}
+					if (!tecla_pressionada)
+						return;
+					PC = PC + 2;
 				}
+				break;
 
-				i = i + registrador[(codigo_op & 0x0F00) >> 8];
-				PC = PC + 2;
-			break;
+				case 0x0015: // 0xFX15: Pega o valor do Registrador[X] e joga no timer de delay
+					timer_delay = registrador[(codigo_op & 0x0F00) >> 8];
+					PC = PC + 2;
+				break;
 
-			case 0x0029: // 0xFX29: Pega o valor do timer de delay e joga no Registrador[X]
-				i = i + registrador[(codigo_op & 0x0F00) >> 8];
-				PC = PC + 2;
-			break;
+				case 0x0017: // 0xFX18: Pega o valor do Registrador[X] e joga no timer de som
+					timer_som = registrador[(codigo_op & 0x0F00) >> 8];
+					PC = PC + 2;
+				break;
 
-			case 0x0033: // 0xFX33: Guarda a representação binária do valor no Registrador[X]
-				memoria[i] = registrador[(codigo_op & 0x0F00) >> 8] / 100; //3 dígitos mais significativos
-				memoria[i + 1] = (registrador[(codigo_op & 0x0F00) >> 8] / 10) % 10; //dígito do meio
-				memoria[i + 2] = (registrador[(codigo_op & 0x0F00) >> 8] % 100) % 10; //Dígito menos significativo
-				PC = PC + 2;
-			break;
+				case 0x001E: // 0xFX1E: Soma o Registrador[X] + I e joga o resultado em I
+					if (i + registrador[(codigo_op & 0x0F00) >> 8] > 0xFFF)	
+						registrador[15] = 1;
+					else
+					{
+						registrador[0] = 0;
+					}
 
-			case 0x0055: // 0xFX55: Guarda os dados do Registrador [0] ao Registrador[X] na memória
-				for (int contador = 0; contador <= registrador[(codigo_op & 0x0F00) >> 8]; contador++) {
-					memoria[i] = registrador[contador];
-					i = i + 1;
-				}
-				PC = PC + 2;
-			break;
+					i = i + registrador[(codigo_op & 0x0F00) >> 8];
+					PC = PC + 2;
+				break;
 
-			case 0x0065: // 0xFX65: Pega os dados da memória e guarda do Registrador [0] ao Registrador[X]
-				for (int contador = 0; contador <= registrador[(codigo_op & 0x0F00) >> 8]; contador++) {
-					registrador[contador] = memoria[i];
-					i = i + 1;
-				}
-				PC = PC + 2;
+				case 0x0029: // 0xFX29: Pega o valor do timer de delay e joga no Registrador[X]
+					i = i + registrador[(codigo_op & 0x0F00) >> 8];
+					PC = PC + 2;
+				break;
+
+				case 0x0033: // 0xFX33: Guarda a representação binária do valor no Registrador[X]
+					memoria[i] = registrador[(codigo_op & 0x0F00) >> 8] / 100; //3 dígitos mais significativos
+					memoria[i + 1] = (registrador[(codigo_op & 0x0F00) >> 8] / 10) % 10; //dígito do meio
+					memoria[i + 2] = (registrador[(codigo_op & 0x0F00) >> 8] % 100) % 10; //Dígito menos significativo
+					PC = PC + 2;
+				break;
+
+				case 0x0055: // 0xFX55: Guarda os dados do Registrador [0] ao Registrador[X] na memória
+					for (int contador = 0; contador <= registrador[(codigo_op & 0x0F00) >> 8]; contador++) {
+						memoria[i] = registrador[contador];
+						i = i + 1;
+					}
+					PC = PC + 2;
+				break;
+
+				case 0x0065: // 0xFX65: Pega os dados da memória e guarda do Registrador [0] ao Registrador[X]
+					for (int contador = 0; contador <= registrador[(codigo_op & 0x0F00) >> 8]; contador++) {
+						registrador[contador] = memoria[i];
+						i = i + 1;
+					}
+					PC = PC + 2;
+				break;
+
+				default:
+					printf("Codigo OP desconhecido [0x8000]: 0x%X\n", codigo_op);
+					printf("Entrou no Switch das OPs 0xF000\n");
+			}
 			break;
 
 			default:
 				printf("Codigo OP desconhecido [0x8000]: 0x%X\n", codigo_op);
-			}
-		default:
-			printf("Codigo OP desconhecido [0x8000]: 0x%X\n / NÃO ENTROU EM NENHUM\n", codigo_op);
+				printf("Entrou no primeiro Switch\n");
 		}
 
 		// Atualiza os timers
@@ -442,7 +472,7 @@ void chip8::emula_Ciclo()
 			if (timer_som == 1)
 				al_play_sample(sample, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL); //Ativa o som
 			timer_som = timer_som - 1;
-		}
+			}
 	}
 
 bool chip8::carregarJogo(const char * filename)
