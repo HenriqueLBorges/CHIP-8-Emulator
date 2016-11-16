@@ -55,6 +55,11 @@ bool chip8::inicializar()
 		al_destroy_display(janela);
 		return false;
 	}
+	if (!al_init_primitives_addon())
+	{
+		fprintf(stderr, "Falha ao inicializar add-on de primitivas.\n");
+		return false;
+	}
 	al_init_font_addon();
 
 	if (!al_init_ttf_addon())
@@ -81,6 +86,8 @@ bool chip8::inicializar()
 	al_register_event_source(fila_eventos, al_get_keyboard_event_source()); //Prepara a fila de evenos para pegar qualquer evento relacionado ao teclado
 	al_register_event_source(fila_eventos, al_get_display_event_source(janela)); //Prepara a fila de evenos para pegar qualquer evento relacionado à janela
 	al_set_window_title(janela, "Emulador Chip-8"); //Coloca o título da janela
+    white = al_map_rgb(0, 0, 0);
+	black = al_map_rgb(255, 255, 255);
 	return true;
 }
 
@@ -314,9 +321,9 @@ void chip8::emula_Ciclo()
 		break;
 
 		case 0xD000: // 0xDXYN: Desenha um sprite 8XN nas coordenadas (Registrado[X], Registrador[Y])
-				//Desenhar na tela através da operação XOR
-				//Checa colisão e marca o registrador [15]
-				//Lê a imagem da memória
+					//Desenhar na tela através da operação XOR
+					//Checa colisão e marca o registrador [15]
+					//Lê a imagem da memória
 		{
 			unsigned short x = registrador[(codigo_op & 0x0F00) >> 8];
 			unsigned short y = registrador[(codigo_op & 0x00F0) >> 4];
@@ -324,33 +331,27 @@ void chip8::emula_Ciclo()
 			unsigned short pixel;
 			registrador[15] = 0; //flag de colisão
 
-			for (int linha_y = 0; linha_y < 5; linha_y++) //Percorre a altura do sprite
+			for (int linha_y = 0; linha_y < altura; linha_y++)
 			{
-				int linha = memoria[i + linha_y];
+				pixel = memoria[i + linha_y];
 				for (int linha_x = 0; linha_x < 8; linha_x++)
 				{
-					pixel = linha &(0x80 >> linha_x);
-					if (pixel != 0)
+					if ((pixel & (0x80 >> linha_x)) != 0)
 					{
-						int totalX = x + linha_x;
-						int totalY = y + linha_y;
-						int index = totalY * 64 + totalX;
-
-						if (index == 1)
-							registrador[15] = 1;
-
-						display[index] = display[index] ^ 1;
+						int totalY = x + linha_x;
+						int totalX = y + linha_y;
+						int index = linha_y * 64 + totalX;
 
 						if (display[index] == 1)
 						{
-							void al_draw_pixel(float x, float y, ALLEGRO_COLOR white);
+							registrador[0xF] = 1;
 						}
-						else {
-							void al_draw_pixel(float x, float y, ALLEGRO_COLOR black);
-						}
+						display[index] ^= 1;
+						al_draw_filled_rectangle(x, y, linha_x, linha_y, black);
 					}
 				}
 			}
+			al_flip_display();
 			flag_Tela = 1;
 			PC = PC + 2;
 		break;
@@ -414,7 +415,7 @@ void chip8::emula_Ciclo()
 					PC = PC + 2;
 				break;
 
-				case 0x0017: // 0xFX18: Pega o valor do Registrador[X] e joga no timer de som
+				case 0x0018: // 0xFX18: Pega o valor do Registrador[X] e joga no timer de som
 					timer_som = registrador[(codigo_op & 0x0F00) >> 8];
 					PC = PC + 2;
 				break;

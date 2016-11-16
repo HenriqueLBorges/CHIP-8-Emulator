@@ -20,10 +20,10 @@ int main(int argc, char **argv)
 		{
 			al_flip_display();
 		}
-		/*if (chip_8.evento.type == ALLEGRO_EVENT_DISPLAY_CLOSE)
+		if (chip_8.evento.type == ALLEGRO_EVENT_DISPLAY_CLOSE)
 		{
 			encerrar = true;
-		}*/
+		}
 	}
 	return 0;
 }

@@ -21,6 +21,8 @@ public:
 	ALLEGRO_FONT *fonte = NULL;
 	ALLEGRO_EVENT_QUEUE *fila_eventos = NULL;
 	ALLEGRO_EVENT evento;
+	ALLEGRO_COLOR black = al_map_rgb(0, 0, 0);
+	ALLEGRO_COLOR white = al_map_rgb(255, 255, 255);
 
 private:
 	ALLEGRO_SAMPLE *sample = NULL; //Variável que será tocado quando o timer ativar
