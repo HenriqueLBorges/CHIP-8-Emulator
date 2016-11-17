@@ -17,8 +17,8 @@ private:
 
 public:
 	graficos_Allegro();
-	graficos_Allegro(int width);
+	graficos_Allegro(int altura);
 	bool iniciar();
-	bool input(chip8& chip8);
+	bool input(chip8 &chip_8);
 	bool limpar();
 };
