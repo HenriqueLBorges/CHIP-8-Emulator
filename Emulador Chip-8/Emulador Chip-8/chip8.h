@@ -18,11 +18,12 @@ public:
 	unsigned char tecla[16]; //As teclas do Chip-8 vão de 0 à F
 	void key_down();
 	void key_up();
-	ALLEGRO_FONT *fonte = NULL;
+	unsigned char gfx[64 * 32];
+	/*ALLEGRO_FONT *fonte = NULL;
 	ALLEGRO_EVENT_QUEUE *fila_eventos = NULL;
 	ALLEGRO_EVENT evento;
 	ALLEGRO_COLOR black = al_map_rgb(0, 0, 0);
-	ALLEGRO_COLOR white = al_map_rgb(255, 255, 255);
+	ALLEGRO_COLOR white = al_map_rgb(255, 255, 255);*/
 
 private:
 	ALLEGRO_SAMPLE *sample = NULL; //Variável que será tocado quando o timer ativar
@@ -32,7 +33,6 @@ private:
 	unsigned char registrador[16]; //15 registradores (V0...VE) de 8 bits do CHIP-8 - 16º = 'carry flag'
 	unsigned short i; //Index
 	unsigned short PC; // Program Counter do CHIP-8
-	unsigned char display[64 * 32];
 
 	unsigned short posicao[16]; //Em caso de jumps ou calls saberemos para onde voltar no programa
 	unsigned short posicao_atual; //Guarda a posição atual no vetor de posições

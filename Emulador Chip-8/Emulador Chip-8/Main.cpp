@@ -1,12 +1,49 @@
-#include "chip8.h"
+#include "graficos_Allegro.h"
 #include <allegro5/allegro.h>
+#include <sstream>
+#include <iostream>
 
-chip8 chip_8;
+using namespace std;
 
 
 int main(int argc, char **argv)
 {
-	if (!chip_8.inicializar()) {
+	stringstream ss;
+	chip8 chip_8;
+	graficos_Allegro graficos;
+
+	if (argc <= 2)
+	{
+		graficos = graficos_Allegro(5);
+	}
+	else if (argc == 3)
+	{
+		int width = 0;
+		ss << argv[2];
+		ss >> width;
+		width /= 64;
+
+		graficos = graficos_Allegro(width);
+	}
+	graficos.iniciar();
+	chip_8.resetar();
+
+	bool closeGame = false;
+
+	if (argv[1] != NULL)
+		chip_8.carregarJogo(argv[1]);
+
+	while (!closeGame)
+	{
+
+		chip_8.emula_Ciclo();
+		closeGame = graficos.input(chip_8);
+	}
+
+	return 0;
+
+
+	/*if (!chip_8.inicializar()) {
 		return -1;
 	}
 	if (!chip_8.carregarJogo(argv[1])) {
@@ -25,7 +62,7 @@ int main(int argc, char **argv)
 			encerrar = true;
 		}
 	}
-	return 0;
+	return 0;*/
 }
 
 
