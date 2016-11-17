@@ -121,7 +121,7 @@ void chip8::resetar()
 
 	//Limpa o display
 	for (int i = 0; i < 2048; ++i)
-		display[i] = 0;
+		gfx[i] = 0;
 
 	//Limpa os registradores, posição e teclas
 	for (int i = 0; i < 16; i++) {
@@ -342,12 +342,12 @@ void chip8::emula_Ciclo()
 						int totalX = y + linha_y;
 						int index = linha_y * 64 + totalX;
 
-						if (display[index] == 1)
+						if (gfx[index] == 1)
 						{
 							registrador[0xF] = 1;
 						}
-						display[index] ^= 1;
-						al_draw_filled_rectangle(x, y, linha_x, linha_y, black);
+						gfx[index] ^= 1;
+						//al_draw_filled_rectangle(x, y, linha_x, linha_y, black);
 					}
 				}
 			}
@@ -387,7 +387,7 @@ void chip8::emula_Ciclo()
 					PC = PC + 2;
 				break;
 
-				case 0x000A: // 0xANNN: Quando uma tecla é pressionada a mesma é guardada no registrador [X]
+				/*case 0x000A: // 0xANNN: Quando uma tecla é pressionada a mesma é guardada no registrador [X]
 				{
 					al_wait_for_event(fila_eventos, &evento);
 
@@ -408,7 +408,7 @@ void chip8::emula_Ciclo()
 					}
 					PC = PC + 2;
 				}
-				break;
+				break;*/
 
 				case 0x0015: // 0xFX15: Pega o valor do Registrador[X] e joga no timer de delay
 					timer_delay = registrador[(codigo_op & 0x0F00) >> 8];
