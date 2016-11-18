@@ -7,32 +7,43 @@
 #include <allegro5/allegro_primitives.h>
 #include <allegro5/allegro_font.h>
 #include <allegro5/allegro_ttf.h>
+//#include "graficos_Allegro.h"
 
-/*bool chip8::inicializar()
+bool chip8::inicializar()
 {
 	if (!al_init()) //Testa a inicialização do Allegro
 	{
-		fprintf(stderr, "Falha ao inicializar Allegro.\n");
+		fprintf(stderr, "ERRO - Falha ao inicializar Allegro.\n");
 		return false;
 	}
 
 	if (!al_install_audio()) //Testa a incialização do áudio 
 	{
-		fprintf(stderr, "Falha ao inicializar áudio.\n");
+		fprintf(stderr, "ERRO - Falha ao inicializar áudio.\n");
 		return false;
 	}
 
 	if (!al_init_acodec_addon()) //Testa os codecs de áudio
 	{
-		fprintf(stderr, "Falha ao inicializar codecs de áudio.\n");
+		fprintf(stderr, "ERRO - Falha ao inicializar codecs de áudio.\n");
 		return false;
 	}
 
 	if (!al_reserve_samples(1)) //Testa os canais
 	{
-		fprintf(stderr, "Falha ao alocar canais de áudio.\n");
+		fprintf(stderr, "ERRO - Falha ao alocar canais de áudio.\n");
 		return false;
 	}
+
+	sample = al_load_sample("Som.wav"); //Seta o som do Timer;
+	if (!sample) //Testa o som
+	{
+		fprintf(stderr, "ERRO - Falha ao carregar sample!\n");
+		al_destroy_display(janela);
+		return false;
+	}
+}
+	/*
 
 	if (!al_install_keyboard()) //Testa o teclado
 	{
@@ -48,13 +59,6 @@
 		return false;
 	}
 
-	sample = al_load_sample("Som.wav"); //Seta o som do Timer;
-	if (!sample) //Testa o som
-	{
-		fprintf(stderr, "Falha ao carregar sample.\n");
-		al_destroy_display(janela);
-		return false;
-	}
 	if (!al_init_primitives_addon())
 	{
 		fprintf(stderr, "Falha ao inicializar add-on de primitivas.\n");
@@ -143,10 +147,13 @@ void chip8::resetar()
 	// Carrega o fontset
 	for (int i = 0; i < 80; ++i)
 		memoria[i] = chip8_fontset[i];
+	inicializar();
+
 }
 
 void chip8::emula_Ciclo()
 {
+	//graficos_Allegro graficos;
 	//Copia o código op da memória
 	codigo_op = memoria[PC] << 8 | memoria[PC + 1]; //adiciona 8 zeros e usa a operação lógica OR para juntar a instrução que está dividida em memoria[PC] e memoria [PC+1]
 	printf("Executando OP 0x%04X da memoria em [%04X], I= %02X e PC =:%02X\n", codigo_op, memoria[PC], i, PC);
@@ -157,10 +164,9 @@ void chip8::emula_Ciclo()
 			switch (codigo_op & 0x000F)//máscara de bits para verificar os 4 últimos e determinar a instrução
 			{
 				case 0x0000: //00E0: Limpa a tela
-					al_clear_to_color(al_map_rgb(0, 0, 0));
 					for (int i = 0; i < 2048; ++i)
 						gfx[i] = 0;
-					flag_Tela = true;
+					flag_Tela = 1;
 					PC += 2;
 				break;
 
@@ -297,7 +303,7 @@ void chip8::emula_Ciclo()
 				}
 		break;
 	
-		case 0x9000: // 0x9XY0: Pula a próxima instrução se o Registrador [X]for diferente do Registrador [Y]
+		case 0x9000: // 0x9XY0: Pula a próxima instrução se o Registrador [X] for diferente do Registrador [Y]
 			if (registrador[(codigo_op & 0x0F00) >> 8] != registrador[(codigo_op & 0x00F0) >> 4])
 				PC = PC + 4;
 			else
@@ -318,7 +324,7 @@ void chip8::emula_Ciclo()
 			PC = PC + 2;
 		break;
 
-		case 0xD000: // 0xDXYN: Desenha um sprite 8XN nas coordenadas (Registrado[X], Registrador[Y])
+		/*case 0xD000: // 0xDXYN: Desenha um sprite 8XN nas coordenadas (Registrado[X], Registrador[Y])
 					//Desenhar na tela através da operação XOR
 					//Checa colisão e marca o registrador [15]
 					//Lê a imagem da memória
@@ -353,7 +359,40 @@ void chip8::emula_Ciclo()
 			flag_Tela = 1;
 			PC = PC + 2;
 		break;
+		}*/
+
+		case 0xD000: // 0xDXYN: Desenha um sprite 8XN nas coordenadas (Registrado[X], Registrador[Y])
+					//Desenhar na tela através da operação XOR
+					//Checa colisão e marca o registrador [15]
+					//Lê a imagem da memória
+		{
+			unsigned short x = registrador[(codigo_op & 0x0F00) >> 8];
+			unsigned short y = registrador[(codigo_op & 0x00F0) >> 4];
+			unsigned short altura = codigo_op & 0x000F;
+			unsigned short pixel;
+			registrador[15] = 0;
+
+			for (int linha_y = 0; linha_y < altura; linha_y++)
+			{
+				pixel = memoria[i + linha_y];
+				for (int linha_x = 0; linha_x < 8; linha_x++)
+				{
+					if ((pixel & (0x80 >> linha_x)) != 0)
+					{
+						if (gfx[(x + linha_x + ((y + linha_y) * 64))] == 1)
+						{
+							registrador[15] = 1;
+						}
+						gfx[x + linha_x + ((y + linha_y) * 64)] = gfx[x + linha_x + ((y + linha_y) * 64)] ^ 1;
+					}
+				}
+			}
+
+			flag_Tela = true;
+			PC = PC + 2;
 		}
+		break;
+
 		case 0xE000:
 			switch (codigo_op & 0x00FF)
 			{
@@ -385,28 +424,24 @@ void chip8::emula_Ciclo()
 					PC = PC + 2;
 				break;
 
-				/*case 0x000A: // 0xANNN: Quando uma tecla é pressionada a mesma é guardada no registrador [X]
+				case 0x000A: // 0xANNN: Quando uma tecla é pressionada a mesma é guardada no registrador [X]
 				{
-					al_wait_for_event(fila_eventos, &evento);
-
-					if (evento.type == ALLEGRO_EVENT_KEY_DOWN)
+					bool tecla_pressionada = 0;
+					for (int i = 0; i < 16; i++)
 					{
-						key_down();
-						for (int i = 0; i < 16; i++)
+						if (tecla[i] != 0)
 						{
-							if (tecla[i] != 0)
-							{
-								registrador[(codigo_op & 0x0F00) >> 8] = i;
-							}
+							registrador[(codigo_op & 0x0F00) >> 8] = i;
+							tecla_pressionada = 1;
 						}
-					}	
-					else 
+					}
+					if (tecla[i] != 1)
 					{
 						return;
 					}
 					PC = PC + 2;
 				}
-				break;*/
+				break;
 
 				case 0x0015: // 0xFX15: Pega o valor do Registrador[X] e joga no timer de delay
 					timer_delay = registrador[(codigo_op & 0x0F00) >> 8];
@@ -476,7 +511,7 @@ void chip8::emula_Ciclo()
 		if (timer_som > 0)
 		{
 			if (timer_som == 1)
-				al_play_sample(sample, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL); //Ativa o som
+				al_play_sample(sample, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL); // toca o som caso o timer seja igual à 1
 			timer_som = timer_som - 1;
 			}
 	}
@@ -532,7 +567,7 @@ bool chip8::carregarJogo(const char * filename)
 	return true;
 }
 
-void chip8::key_down()
+/*void chip8::key_down()
 {
 	if (ALLEGRO_KEY_1)		tecla[0x1] = 1;
 	else if (ALLEGRO_KEY_2)	tecla[0x2] = 1;
@@ -577,3 +612,4 @@ void chip8::key_up()
 	else if (ALLEGRO_KEY_C)	tecla[0xB] = 0;
 	else if (ALLEGRO_KEY_V)	tecla[0xF] = 0;
 }
+*/

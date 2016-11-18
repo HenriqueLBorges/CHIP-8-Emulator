@@ -1,10 +1,11 @@
 #include "graficos_Allegro.h"
-
+#include <allegro5/allegro_audio.h>
+#include <allegro5/allegro_acodec.h>
 
 graficos_Allegro::graficos_Allegro()
 {
 	FPS = 200;
-	display = NULL;
+	janela = NULL;
 	fila_eventos = NULL;
 	timer = NULL;
 	redesenhar = true;
@@ -18,30 +19,49 @@ graficos_Allegro::graficos_Allegro(int mod)
 {
 	modificador = mod;
 	FPS = 200;
-	display = NULL;
+	janela = NULL;
 	fila_eventos = NULL;
 	timer = NULL;
 	redesenhar = true;
 	largura = 64 * modificador;
 	altura = 32 * modificador;
 	pixel = NULL;
+
 }
 
 bool graficos_Allegro::iniciar()
 {
-	if (!al_init())
+	if (!al_init())//Verifica a inicialização do Allegro
 	{
 		fprintf_s(stderr, "ERRO - Falha ao inicializar a biblioteca Allegro!\n");
 		return false;
 	}
 
-	if (!al_install_keyboard())
+	if (!al_install_audio())//Verifica a inicialização do áudio
+	{
+		fprintf(stderr, "ERRO - Falha ao inicializar áudio!\n");
+		return false;
+	}
+
+	if (!al_init_acodec_addon())//Testa os codecs de áudio
+	{
+		fprintf(stderr, "ERRO - Falha ao inicializar codecs de áudio!\n");
+		return false;
+	}
+
+	if (!al_reserve_samples(1))//Testa os canais
+	{
+		fprintf(stderr, "ERRO - Falha ao alocar canais de áudio!\n");
+		return false;
+	}
+
+	if (!al_install_keyboard())//Verifica a inicialização do teclado
 	{
 		fprintf_s(stderr, "ERRO - Falha ao inicializar o teclado!\n");
 		return false;
 	}
 
-	timer = al_create_timer(1.0 / FPS);
+	timer = al_create_timer(1.0 / FPS);//Inicializa o Timer
 	if (!timer)
 	{
 		fprintf_s(stderr, "ERRO - Falha ao criar o timer!\n");
@@ -50,37 +70,35 @@ bool graficos_Allegro::iniciar()
 
 	al_set_new_display_flags(ALLEGRO_WINDOWED | ALLEGRO_DIRECT3D_INTERNAL);
 
-	display = al_create_display(largura, altura);
-	if (!display)
+	janela = al_create_display(largura, altura);//Cria janela da aplicação
+	if (!janela)
 	{
-		fprintf_s(stderr, "ERRO - Falha ao criar o display!\n");
+		fprintf_s(stderr, "ERRO - Falha ao criar a janela da aplicação!\n");
 		al_destroy_timer(timer);
 		return false;
 	}
+	al_set_window_title(janela, "Emulador Chip-8"); //Coloca o título da janela
 
-
-
-
-	fila_eventos = al_create_event_queue();
+	fila_eventos = al_create_event_queue();//Cria uma fila de eventos
 	if (!fila_eventos)
 	{
 		fprintf_s(stderr, "ERRO - Falha ao criar a fila de eventos!\n");
-		al_destroy_display(display);
+		al_destroy_display(janela);
 		al_destroy_timer(timer);
 		return false;
 	}
 
 	al_init_primitives_addon();
 
-	al_register_event_source(fila_eventos, al_get_display_event_source(display));
-	al_register_event_source(fila_eventos, al_get_timer_event_source(timer));
-	al_register_event_source(fila_eventos, al_get_keyboard_event_source());
+	al_register_event_source(fila_eventos, al_get_display_event_source(janela));//Prepara a fila de evenos para pegar qualquer evento relacionado à janela
+	al_register_event_source(fila_eventos, al_get_timer_event_source(timer));//Prepara a fila de evenos para pegar qualquer evento relacionado aos Timers
+	al_register_event_source(fila_eventos, al_get_keyboard_event_source());//Prepara a fila de evenos para pegar qualquer evento relacionado ao teclado
 
 	pixel = al_create_bitmap(modificador, modificador);
 	al_set_target_bitmap(pixel);
 	al_draw_filled_rectangle(0, 0, modificador, modificador, al_map_rgb(255, 255, 255));
 
-	al_set_target_bitmap(al_get_backbuffer(display));
+	al_set_target_bitmap(al_get_backbuffer(janela));
 	al_clear_to_color(al_map_rgb(0, 0, 0));
 	al_flip_display();
 
@@ -92,69 +110,69 @@ bool graficos_Allegro::iniciar()
 
 bool graficos_Allegro::input(chip8& chip8)
 {
-	ALLEGRO_EVENT ev;
-	al_wait_for_event(fila_eventos, &ev);
+	ALLEGRO_EVENT evento;
+	al_wait_for_event(fila_eventos, &evento);
 
-	if (ev.type == ALLEGRO_EVENT_TIMER)
+	if (evento.type == ALLEGRO_EVENT_TIMER)
 	{
 		chip8.flag_Tela = true;
 	}
-	else if (ev.type == ALLEGRO_EVENT_DISPLAY_CLOSE)
+	else if (evento.type == ALLEGRO_EVENT_DISPLAY_CLOSE)
 	{
-		return limpar();
+		return encerrar();
 	}
-	else if (ev.type == ALLEGRO_EVENT_KEY_DOWN)
+	else if (evento.type == ALLEGRO_EVENT_KEY_DOWN)
 	{
 
-		if (ev.keyboard.keycode == ALLEGRO_KEY_ESCAPE)    // esc
-			return limpar();
+		if (evento.keyboard.keycode == ALLEGRO_KEY_ESCAPE)    // esc
+			return encerrar();
 
-		if (ev.keyboard.keycode == ALLEGRO_KEY_1)		chip8.tecla[0x1] = 1;
-		else if (ev.keyboard.keycode == ALLEGRO_KEY_2)	chip8.tecla[0x2] = 1;
-		else if (ev.keyboard.keycode == ALLEGRO_KEY_3)	chip8.tecla[0x3] = 1;
-		else if (ev.keyboard.keycode == ALLEGRO_KEY_4)	chip8.tecla[0xC] = 1;
+		if (evento.keyboard.keycode == ALLEGRO_KEY_1)		chip8.tecla[0x1] = 1;
+		else if (evento.keyboard.keycode == ALLEGRO_KEY_2)	chip8.tecla[0x2] = 1;
+		else if (evento.keyboard.keycode == ALLEGRO_KEY_3)	chip8.tecla[0x3] = 1;
+		else if (evento.keyboard.keycode == ALLEGRO_KEY_4)	chip8.tecla[0xC] = 1;
 
-		else if (ev.keyboard.keycode == ALLEGRO_KEY_Q)	chip8.tecla[0x4] = 1;
-		else if (ev.keyboard.keycode == ALLEGRO_KEY_W)	chip8.tecla[0x5] = 1;
-		else if (ev.keyboard.keycode == ALLEGRO_KEY_E)	chip8.tecla[0x6] = 1;
-		else if (ev.keyboard.keycode == ALLEGRO_KEY_R)	chip8.tecla[0xD] = 1;
+		else if (evento.keyboard.keycode == ALLEGRO_KEY_Q)	chip8.tecla[0x4] = 1;
+		else if (evento.keyboard.keycode == ALLEGRO_KEY_W)	chip8.tecla[0x5] = 1;
+		else if (evento.keyboard.keycode == ALLEGRO_KEY_E)	chip8.tecla[0x6] = 1;
+		else if (evento.keyboard.keycode == ALLEGRO_KEY_R)	chip8.tecla[0xD] = 1;
 
-		else if (ev.keyboard.keycode == ALLEGRO_KEY_A)	chip8.tecla[0x7] = 1;
-		else if (ev.keyboard.keycode == ALLEGRO_KEY_S)	chip8.tecla[0x8] = 1;
-		else if (ev.keyboard.keycode == ALLEGRO_KEY_D)	chip8.tecla[0x9] = 1;
-		else if (ev.keyboard.keycode == ALLEGRO_KEY_F)	chip8.tecla[0xE] = 1;
+		else if (evento.keyboard.keycode == ALLEGRO_KEY_A)	chip8.tecla[0x7] = 1;
+		else if (evento.keyboard.keycode == ALLEGRO_KEY_S)	chip8.tecla[0x8] = 1;
+		else if (evento.keyboard.keycode == ALLEGRO_KEY_D)	chip8.tecla[0x9] = 1;
+		else if (evento.keyboard.keycode == ALLEGRO_KEY_F)	chip8.tecla[0xE] = 1;
 
-		else if (ev.keyboard.keycode == ALLEGRO_KEY_Y)	chip8.tecla[0xA] = 1;
-		else if (ev.keyboard.keycode == ALLEGRO_KEY_X)	chip8.tecla[0x0] = 1;
-		else if (ev.keyboard.keycode == ALLEGRO_KEY_C)	chip8.tecla[0xB] = 1;
-		else if (ev.keyboard.keycode == ALLEGRO_KEY_V)	chip8.tecla[0xF] = 1;
+		else if (evento.keyboard.keycode == ALLEGRO_KEY_Y)	chip8.tecla[0xA] = 1;
+		else if (evento.keyboard.keycode == ALLEGRO_KEY_X)	chip8.tecla[0x0] = 1;
+		else if (evento.keyboard.keycode == ALLEGRO_KEY_C)	chip8.tecla[0xB] = 1;
+		else if (evento.keyboard.keycode == ALLEGRO_KEY_V)	chip8.tecla[0xF] = 1;
 		// keycode stuff set to true
 	}
-	else if (ev.type == ALLEGRO_EVENT_KEY_UP)
+	else if (evento.type == ALLEGRO_EVENT_KEY_UP)
 	{
-		if (ev.keyboard.keycode == ALLEGRO_KEY_1)		chip8.tecla[0x1] = 0;
-		else if (ev.keyboard.keycode == ALLEGRO_KEY_2)	chip8.tecla[0x2] = 0;
-		else if (ev.keyboard.keycode == ALLEGRO_KEY_3)	chip8.tecla[0x3] = 0;
-		else if (ev.keyboard.keycode == ALLEGRO_KEY_4)	chip8.tecla[0xC] = 0;
+		if (evento.keyboard.keycode == ALLEGRO_KEY_1)		chip8.tecla[0x1] = 0;
+		else if (evento.keyboard.keycode == ALLEGRO_KEY_2)	chip8.tecla[0x2] = 0;
+		else if (evento.keyboard.keycode == ALLEGRO_KEY_3)	chip8.tecla[0x3] = 0;
+		else if (evento.keyboard.keycode == ALLEGRO_KEY_4)	chip8.tecla[0xC] = 0;
 
-		else if (ev.keyboard.keycode == ALLEGRO_KEY_Q)	chip8.tecla[0x4] = 0;
-		else if (ev.keyboard.keycode == ALLEGRO_KEY_W)	chip8.tecla[0x5] = 0;
-		else if (ev.keyboard.keycode == ALLEGRO_KEY_E)	chip8.tecla[0x6] = 0;
-		else if (ev.keyboard.keycode == ALLEGRO_KEY_R)	chip8.tecla[0xD] = 0;
+		else if (evento.keyboard.keycode == ALLEGRO_KEY_Q)	chip8.tecla[0x4] = 0;
+		else if (evento.keyboard.keycode == ALLEGRO_KEY_W)	chip8.tecla[0x5] = 0;
+		else if (evento.keyboard.keycode == ALLEGRO_KEY_E)	chip8.tecla[0x6] = 0;
+		else if (evento.keyboard.keycode == ALLEGRO_KEY_R)	chip8.tecla[0xD] = 0;
 
-		else if (ev.keyboard.keycode == ALLEGRO_KEY_A)	chip8.tecla[0x7] = 0;
-		else if (ev.keyboard.keycode == ALLEGRO_KEY_S)	chip8.tecla[0x8] = 0;
-		else if (ev.keyboard.keycode == ALLEGRO_KEY_D)	chip8.tecla[0x9] = 0;
-		else if (ev.keyboard.keycode == ALLEGRO_KEY_F)	chip8.tecla[0xE] = 0;
+		else if (evento.keyboard.keycode == ALLEGRO_KEY_A)	chip8.tecla[0x7] = 0;
+		else if (evento.keyboard.keycode == ALLEGRO_KEY_S)	chip8.tecla[0x8] = 0;
+		else if (evento.keyboard.keycode == ALLEGRO_KEY_D)	chip8.tecla[0x9] = 0;
+		else if (evento.keyboard.keycode == ALLEGRO_KEY_F)	chip8.tecla[0xE] = 0;
 
-		else if (ev.keyboard.keycode == ALLEGRO_KEY_Y)	chip8.tecla[0xA] = 0;
-		else if (ev.keyboard.keycode == ALLEGRO_KEY_X)	chip8.tecla[0x0] = 0;
-		else if (ev.keyboard.keycode == ALLEGRO_KEY_C)	chip8.tecla[0xB] = 0;
-		else if (ev.keyboard.keycode == ALLEGRO_KEY_V)	chip8.tecla[0xF] = 0;
+		else if (evento.keyboard.keycode == ALLEGRO_KEY_Y)	chip8.tecla[0xA] = 0;
+		else if (evento.keyboard.keycode == ALLEGRO_KEY_X)	chip8.tecla[0x0] = 0;
+		else if (evento.keyboard.keycode == ALLEGRO_KEY_C)	chip8.tecla[0xB] = 0;
+		else if (evento.keyboard.keycode == ALLEGRO_KEY_V)	chip8.tecla[0xF] = 0;
 		// keycode stuff set to false
 	}
 
-	if (chip8.flag_Tela && al_is_event_queue_empty(fila_eventos))
+	if ((chip8.flag_Tela == true) && (al_is_event_queue_empty(fila_eventos)))
 	{
 		chip8.flag_Tela = false;
 
@@ -176,11 +194,11 @@ bool graficos_Allegro::input(chip8& chip8)
 	return false;
 }
 
-bool graficos_Allegro::limpar()
+bool graficos_Allegro::encerrar()
 {
 	al_destroy_bitmap(pixel);
 	al_destroy_timer(timer);
-	al_destroy_display(display);
+	al_destroy_display(janela);
 	al_destroy_event_queue(fila_eventos);
 
 	return true;

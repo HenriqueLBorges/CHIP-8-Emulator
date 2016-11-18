@@ -1,6 +1,8 @@
-﻿  Main.cpp
+﻿  graficos_Allegro.cpp
+  chip8.cpp
   Generating Code...
+d:\git\chip-8-emulator\emulador chip-8\emulador chip-8\chip8.cpp(45): warning C4715: 'chip8::inicializar': not all control paths return a value
   Skipping... (no relevant changes detected)
-  graficos_Allegro.cpp
+  Main.cpp
   Emulador Chip-8.vcxproj -> D:\GIT\Chip-8-Emulator\Emulador Chip-8\x64\Debug\Emulador Chip-8.exe
   Emulador Chip-8.vcxproj -> D:\GIT\Chip-8-Emulator\Emulador Chip-8\x64\Debug\Emulador Chip-8.pdb (Partial PDB)
