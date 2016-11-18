@@ -16,8 +16,8 @@ public:
 	bool flag_Tela; //Status atual do registrador [15] (Carry Flag)
 	bool inicializar(); //Testa as configurações antes de iniciar o emulador
 	unsigned char tecla[16]; //As teclas do Chip-8 vão de 0 à F
-	void key_down();
-	void key_up();
+	/*void key_down();
+	void key_up();*/
 	unsigned char gfx[64 * 32];
 	/*ALLEGRO_FONT *fonte = NULL;
 	ALLEGRO_EVENT_QUEUE *fila_eventos = NULL;
