@@ -205,9 +205,9 @@ bool graficos_Allegro::input(chip8 &chip8)
 
 		al_clear_to_color(al_map_rgb(0, 0, 0));
 
-		for (int y = 0; y < 32; ++y){
-			for (int x = 0; x < 64; ++x){
-				if (!chip8.gfx[(y * 64) + x] == 0)
+		for (int y = 0; y < 32; y++){
+			for (int x = 0; x < 64; x++){
+				if (chip8.gfx[(y * 64) + x] == 1)
 					al_draw_bitmap(pixel, x * modificador, y * modificador, ALLEGRO_VIDEO_BITMAP);
 			}
 		}
