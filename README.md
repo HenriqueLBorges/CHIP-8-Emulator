@@ -9,9 +9,9 @@ g++ -Wall main.cpp graficos_Allegro.cpp chip8.cpp -o chip8 `pkg-config --cflags 
 
 ##### Keys schematic
 
-1 - 2 - 3 - 4
-Q - W - E - R
-A - S - D - F
-Y - X - C - V
+1 - 2 - 3 - 4  
+Q - W - E - R  
+A - S - D - F  
+Y - X - C - V  
 
 
