@@ -1,9 +1,9 @@
 #include "graficos_Allegro.h"
 #include <allegro5/allegro_audio.h>
-#include <allegro5/allegro_acodec.h>=
+#include <allegro5/allegro_acodec.h>
 graficos_Allegro::graficos_Allegro()
 {
-	FPS = 60.0;
+	FPS = 120.0;
 	janela = NULL;
 	fila_eventos = NULL;
 	timer = NULL;
@@ -17,7 +17,7 @@ graficos_Allegro::graficos_Allegro()
 graficos_Allegro::graficos_Allegro(int mod)
 {
 	modificador = mod;
-	FPS = 60.0;
+	FPS = 120.0;
 	janela = NULL;
 	fila_eventos = NULL;
 	timer = NULL;
@@ -29,37 +29,37 @@ graficos_Allegro::graficos_Allegro(int mod)
 
 bool graficos_Allegro::iniciar()
 {
-	if (!al_init()) //Verifica a inicializa��o do Allegro
+	if (!al_init()) //Verifica a inicializacao do Allegro
 	{
 		fprintf(stderr, "ERRO - Falha ao inicializar a biblioteca Allegro!\n");
 		return false;
 	}
 
-	if (!al_install_audio()) //Verifica a inicializa��o do �udio
+	if (!al_install_audio()) //Verifica a inicializacaoo do audio
 	{
-		fprintf(stderr, "ERRO - Falha ao inicializar �udio!\n");
+		fprintf(stderr, "ERRO - Falha ao inicializar audio!\n");
 		return false;
 	}
 
-	if (!al_init_acodec_addon()) //Testa os codecs de �udio
+	if (!al_init_acodec_addon()) //Testa os codecs de audio
 	{
-		fprintf(stderr, "ERRO - Falha ao inicializar codecs de �udio!\n");
+		fprintf(stderr, "ERRO - Falha ao inicializar codecs de audio!\n");
 		return false;
 	}
 
 	if (!al_reserve_samples(1)) //Testa os canais
 	{
-		fprintf(stderr, "ERRO - Falha ao alocar canais de �udio!\n");
+		fprintf(stderr, "ERRO - Falha ao alocar canais de audio!\n");
 		return false;
 	}
 
-	if (!al_install_keyboard()) //Verifica a inicializa��o do teclado
+	if (!al_install_keyboard()) //Verifica a inicializacaoo do teclado
 	{
 		fprintf(stderr, "ERRO - Falha ao inicializar o teclado!\n");
 		return false;
 	}
 
-	timer = al_create_timer(1.0 / FPS); //Inicializa o Timer
+	timer = al_create_timer(1.0 / FPS);	//Inicializa o Timer																																																															)																																																																																																																																																																																																																																																																																																									; //Inicializa o Timer
 	if (!timer)
 	{
 		fprintf(stderr, "ERRO - Falha ao criar o timer!\n");
@@ -68,14 +68,14 @@ bool graficos_Allegro::iniciar()
 
 	al_set_new_display_flags(ALLEGRO_WINDOWED | ALLEGRO_DIRECT3D_INTERNAL);
 
-	janela = al_create_display(largura, altura); //Cria janela da aplica��o
+	janela = al_create_display(largura, altura); //Cria janela da aplicacao
 	if (!janela)
 	{
-		fprintf(stderr, "ERRO - Falha ao criar a janela da aplica��o!\n");
+		fprintf(stderr, "ERRO - Falha ao criar a janela da aplicacao!\n");
 		al_destroy_timer(timer);
 		return false;
 	}
-	al_set_window_title(janela, "Emulador Chip-8"); //Coloca o t�tulo da janela
+	al_set_window_title(janela, "Emulador Chip-8"); //Coloca o titulo da janela
 
 	fila_eventos = al_create_event_queue(); //Cria uma fila de eventos
 	if (!fila_eventos)
@@ -118,9 +118,14 @@ bool graficos_Allegro::input(chip8 &chip8)
 		return encerrar();
 
 	else if (evento.type == ALLEGRO_EVENT_KEY_DOWN)
+	/*	controles
+		1 - 2 - 3 - 4
+		Q - W - E - R
+		A - S - D - F
+		Y - X - C - V
+	*/
 	{
-
-		if (evento.keyboard.keycode == ALLEGRO_KEY_ESCAPE) // esc
+		if (evento.keyboard.keycode == ALLEGRO_KEY_ESCAPE) // ESC
 			return encerrar();
 
 		if (evento.keyboard.keycode == ALLEGRO_KEY_1)
@@ -158,7 +163,6 @@ bool graficos_Allegro::input(chip8 &chip8)
 			chip8.tecla[0xB] = 1;
 		else if (evento.keyboard.keycode == ALLEGRO_KEY_V)
 			chip8.tecla[0xF] = 1;
-		// keycode stuff set to true
 	}
 	else if (evento.type == ALLEGRO_EVENT_KEY_UP)
 	{
@@ -197,7 +201,6 @@ bool graficos_Allegro::input(chip8 &chip8)
 			chip8.tecla[0xB] = 0;
 		else if (evento.keyboard.keycode == ALLEGRO_KEY_V)
 			chip8.tecla[0xF] = 0;
-		// keycode stuff set to false
 	}
 
 	if ((chip8.flag_Tela == true) && (al_is_event_queue_empty(fila_eventos))){
