@@ -1,4 +1,8 @@
 # About:
+<img src="screenshots/screenshot.jpg" alt="Drawing"/>
+
+Screenshot
+
 This project is a [CHIP-8](https://en.wikipedia.org/wiki/CHIP-8) emulator written in C++ with [Allegro 5 library](http://liballeg.org/).
 
 ##### Command to compile the project
@@ -13,5 +17,4 @@ g++ -Wall main.cpp graficos_Allegro.cpp chip8.cpp -o chip8 `pkg-config --cflags 
 Q - W - E - R  
 A - S - D - F  
 Y - X - C - V  
-
 
