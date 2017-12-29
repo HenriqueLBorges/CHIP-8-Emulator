@@ -2,6 +2,7 @@
 <img src="screenshots/screenshot.jpg" alt="Drawing"/>
 Screenshot
 
+
 This project is a [CHIP-8](https://en.wikipedia.org/wiki/CHIP-8) emulator written in C++ with [Allegro 5 library](http://liballeg.org/).
 
 ##### Command to compile the project
